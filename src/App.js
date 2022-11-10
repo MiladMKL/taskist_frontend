@@ -4,7 +4,7 @@ import Task from "./components/Task"
 import Notification from "./components/Notification"
 import "./index.css"
 
-const App = (props) => {
+const App = () => {
 	/*
   ---------------------------- useState */
 	const [tasks, setTasks] = useState([])
@@ -24,13 +24,13 @@ const App = (props) => {
   ---------------------------- Methods */
 
 	const toggleTaskCompleteForTask = (id) => {
-		const task = tasks.find((t) => t.id === id)
+		const task = tasks.find((task) => task.id === id)
 		const changedTask = { ...task, completed: !task.completed }
 
 		taskService
 			.update(id, changedTask)
 			.then((returnedTask) => {
-				setTasks(tasks.map((t) => (t.id !== id ? t : returnedTask)))
+				setTasks(tasks.map((task) => (task.id !== id ? task : returnedTask)))
 			})
 			.catch((error) => {
 				setErrorMessage(`Task '${task.title}' was already deleted from server`)
