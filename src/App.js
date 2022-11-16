@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 import Task from './components/Task'
 import Notification from './components/Notification'
@@ -15,12 +15,13 @@ const App = () => {
 	/*
   ---------------------------- useState */
 	const [tasks, setTasks] = useState([])
-	const [newTask, setNewTask] = useState('')
 	const [showAllTasks, setShowAllTasks] = useState(true)
 	const [errorMessage, setErrorMessage] = useState('')
 	const [username, setUsername] = useState('')
 	const [password, setPassword] = useState('')
 	const [user, setUser] = useState(null)
+
+	const taskFormRef = useRef()
 
 	/*
   ---------------------------- useEffect */
@@ -84,25 +85,18 @@ const App = () => {
 			})
 	}
 
-	const addTask = (event) => {
-		event.preventDefault()
-
-		const taskObject = {
-			title: newTask,
-			date: new Date().toISOString(),
-			completed: false,
-		}
-
+	const addTask = (taskObject) => {
+		taskFormRef.current.toggleVisibility()
 		taskService.create(taskObject).then((returnedTask) => {
 			setTasks(tasks.concat(returnedTask))
-			setNewTask('')
 		})
 	}
 
-	const handleTaskChange = (event) => {
-		setNewTask(event.target.value)
-	}
-
+	const taskForm = () => (
+		<Toggleable buttonLabel="new task" ref={taskFormRef}>
+			<TaskForm createTask={addTask} />
+		</Toggleable>
+	)
 	/*
   ---------------------------- Variables */
 	const tasksToShow = showAllTasks
@@ -129,15 +123,12 @@ const App = () => {
 			) : (
 				<div>
 					<p>{user.name} logged in</p>
-					<Toggleable buttonLabel="add task">
-						<TaskForm
-							onSubmit={addTask}
-							value={newTask}
-							handleChange={handleTaskChange}
-						/>
+					<Toggleable buttonLabel="add task" ref={taskFormRef}>
+						<TaskForm createTask={addTask} />
 					</Toggleable>
 				</div>
 			)}
+
 			<div>
 				<button onClick={() => setShowAllTasks(!showAllTasks)}>
 					show {showAllTasks ? 'completed' : 'all'}
