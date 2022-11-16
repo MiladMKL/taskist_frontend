@@ -1,16 +1,26 @@
-import { useState, useEffect } from "react"
-import taskService from "./services/tasks"
-import Task from "./components/Task"
-import Notification from "./components/Notification"
-import "./index.css"
+import { useState, useEffect } from 'react'
+
+import Task from './components/Task'
+import Notification from './components/Notification'
+import LoginForm from './components/LoginForm'
+import Toggleable from './components/Toggleable'
+import TaskForm from './components/TaskForm'
+
+import './index.css'
+
+import taskService from './services/tasks'
+import loginService from './services/login'
 
 const App = () => {
 	/*
   ---------------------------- useState */
 	const [tasks, setTasks] = useState([])
-	const [newTask, setNewTask] = useState("")
+	const [newTask, setNewTask] = useState('')
 	const [showAllTasks, setShowAllTasks] = useState(true)
-	const [errorMessage, setErrorMessage] = useState("")
+	const [errorMessage, setErrorMessage] = useState('')
+	const [username, setUsername] = useState('')
+	const [password, setPassword] = useState('')
+	const [user, setUser] = useState(null)
 
 	/*
   ---------------------------- useEffect */
@@ -20,8 +30,41 @@ const App = () => {
 		})
 	}, [])
 
+	useEffect(() => {
+		const loggedUserJSON = window.localStorage.getItem('loggedTasksAppUser')
+		if (loggedUserJSON) {
+			const user = JSON.parse(loggedUserJSON)
+			setUser(user)
+			taskService.setToken(user.token)
+		}
+	}, [])
+
 	/*
   ---------------------------- Methods */
+
+	const handleLogin = async (event) => {
+		event.preventDefault()
+
+		try {
+			const user = await loginService.login({
+				username,
+				password,
+			})
+
+			setUser(user)
+			// Setze das Token auch für taskService damit tasks hinzugefügt werden können
+			taskService.setToken(user.token)
+			window.localStorage.setItem('loggedTasksAppUser', JSON.stringify(user))
+
+			setUsername('')
+			setPassword('')
+		} catch (exception) {
+			setErrorMessage('Wrong username or password')
+			setTimeout(() => {
+				setErrorMessage(null)
+			}, 5000)
+		}
+	}
 
 	const toggleTaskCompleteForTask = (id) => {
 		const task = tasks.find((task) => task.id === id)
@@ -52,11 +95,11 @@ const App = () => {
 
 		taskService.create(taskObject).then((returnedTask) => {
 			setTasks(tasks.concat(returnedTask))
-			setNewTask("")
+			setNewTask('')
 		})
 	}
 
-	const newTaskHandler = (event) => {
+	const handleTaskChange = (event) => {
 		setNewTask(event.target.value)
 	}
 
@@ -70,11 +113,37 @@ const App = () => {
   ---------------------------- Render */
 	return (
 		<div>
-			<h1>Tasks</h1>
+			<h1>Taskist</h1>
 			<Notification message={errorMessage} />
-			<button onClick={() => setShowAllTasks(!showAllTasks)}>
-				show {showAllTasks ? "completed" : "all"}
-			</button>
+
+			{user === null ? (
+				<Toggleable buttonLabel="login">
+					<LoginForm
+						username={username}
+						password={password}
+						handleUsernameChange={({ target }) => setUsername(target.value)}
+						handlePasswordChange={({ target }) => setPassword(target.value)}
+						handleSubmit={handleLogin}
+					/>
+				</Toggleable>
+			) : (
+				<div>
+					<p>{user.name} logged in</p>
+					<Toggleable buttonLabel="add task">
+						<TaskForm
+							onSubmit={addTask}
+							value={newTask}
+							handleChange={handleTaskChange}
+						/>
+					</Toggleable>
+				</div>
+			)}
+			<div>
+				<button onClick={() => setShowAllTasks(!showAllTasks)}>
+					show {showAllTasks ? 'completed' : 'all'}
+				</button>
+			</div>
+
 			<ul>
 				{tasksToShow.map((task) => (
 					<Task
@@ -84,10 +153,6 @@ const App = () => {
 					/>
 				))}
 			</ul>
-			<form onSubmit={addTask}>
-				<input value={newTask} onChange={newTaskHandler} />
-				<button type="submit">Add Task</button>
-			</form>
 		</div>
 	)
 }

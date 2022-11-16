@@ -1,7 +1,13 @@
-import axios from "axios"
+import axios from 'axios'
 // const baseUrl = "http://localhost:3001/api/tasks"
 // const baseUrl = "https://fullstack-taskist-clone.herokuapp.com/api/tasks"
-const baseUrl = "/api/tasks"
+const baseUrl = '/api/tasks'
+
+let token = null
+
+const setToken = (newToken) => {
+	token = `bearer ${newToken}`
+}
 
 const getAll = () => {
 	const request = axios.get(baseUrl)
@@ -17,9 +23,12 @@ const getAll = () => {
 	return request.then((response) => response.data)
 }
 
-const create = (newObject) => {
-	const request = axios.post(baseUrl, newObject)
-	return request.then((response) => response.data)
+const create = async (newObject) => {
+	const config = {
+		headers: { Authorization: token },
+	}
+	const request = await axios.post(baseUrl, newObject, config)
+	return request.data
 }
 
 const update = (id, newObject) => {
@@ -29,7 +38,8 @@ const update = (id, newObject) => {
 }
 
 export default {
-	getAll: getAll,
-	create: create,
-	update: update,
+	getAll,
+	create,
+	update,
+	setToken,
 }
